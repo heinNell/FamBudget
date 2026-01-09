@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import
-    {
-        calculateCurrentBalance,
-        getBalanceMonthOptions,
-        getCurrentBalanceMonth
-    } from '../hooks/useBalances';
-import type { BalanceAccount, BalanceAccountFormData } from '../types/budget';
+import {
+    calculateCurrentBalance,
+    getBalanceMonthOptions,
+    getCurrentBalanceMonth
+} from '../hooks/useBalances';
+import type { BalanceAccount, BalanceAccountFormData, Expense } from '../types/budget';
 
 /** Format currency in ZAR */
 function formatCurrency(amount: number): string {
@@ -18,12 +17,13 @@ function formatCurrency(amount: number): string {
 
 interface BalanceTrackerProps {
   accounts: BalanceAccount[];
+  paidExpenses: Expense[]; // Expenses marked as paid with balance_account_id
   onAdd: (data: BalanceAccountFormData) => Promise<void>;
   onUpdate: (id: string, data: Partial<BalanceAccountFormData>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
 
-export function BalanceTracker({ accounts, onAdd, onUpdate, onDelete }: BalanceTrackerProps) {
+export function BalanceTracker({ accounts, paidExpenses, onAdd, onUpdate, onDelete }: BalanceTrackerProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -38,6 +38,38 @@ export function BalanceTracker({ accounts, onAdd, onUpdate, onDelete }: BalanceT
   });
 
   const monthOptions = getBalanceMonthOptions();
+
+  // Calculate total paid for an account from expenses
+  const getTotalPaidForAccount = (accountId: string): number => {
+    return paidExpenses
+      .filter(e => e.balance_account_id === accountId && e.is_paid)
+      .reduce((sum, e) => sum + Number(e.amount), 0);
+  };
+
+  // Calculate total paid for an account up to a specific month
+  const getTotalPaidUpToMonth = (accountId: string, upToMonth: string): number => {
+    return paidExpenses
+      .filter(e => e.balance_account_id === accountId && e.is_paid && e.month <= upToMonth)
+      .reduce((sum, e) => sum + Number(e.amount), 0);
+  };
+
+  // Get paid expenses for an account grouped by month
+  const getPaidExpensesByMonth = (accountId: string): Record<string, Expense[]> => {
+    const grouped: Record<string, Expense[]> = {};
+    paidExpenses
+      .filter(e => e.balance_account_id === accountId && e.is_paid)
+      .forEach(e => {
+        if (!grouped[e.month]) grouped[e.month] = [];
+        grouped[e.month].push(e);
+      });
+    return grouped;
+  };
+
+  // Calculate actual balance based on paid expenses
+  const getActualBalanceForMonth = (account: BalanceAccount, month: string): number => {
+    const totalPaid = getTotalPaidUpToMonth(account.id, month);
+    return Math.max(0, account.initial_balance - totalPaid);
+  };
 
   const resetForm = () => {
     setFormData({
@@ -202,9 +234,12 @@ export function BalanceTracker({ accounts, onAdd, onUpdate, onDelete }: BalanceT
       ) : (
         <div className="balance-accounts-grid">
           {accounts.map((account) => {
-            const balanceForMonth = getBalanceForMonth(account, selectedViewMonth);
+            const projectedBalance = getBalanceForMonth(account, selectedViewMonth);
+            const actualBalance = getActualBalanceForMonth(account, selectedViewMonth);
+            const totalPaid = getTotalPaidForAccount(account.id);
             const monthsRemaining = getMonthsRemaining(account);
-            const progressPercentage = ((account.initial_balance - balanceForMonth) / account.initial_balance) * 100;
+            const progressPercentage = ((account.initial_balance - actualBalance) / account.initial_balance) * 100;
+            const paidByMonth = getPaidExpensesByMonth(account.id);
             
             return (
               <div key={account.id} className="balance-account-card">
@@ -216,14 +251,14 @@ export function BalanceTracker({ accounts, onAdd, onUpdate, onDelete }: BalanceT
                       onClick={() => handleEdit(account)}
                       title="Edit"
                     >
-                      ✏️
+                      <span className="btn-icon-text">Edit</span>
                     </button>
                     <button 
                       className="btn-delete" 
                       onClick={() => handleDelete(account.id)}
                       title="Delete"
                     >
-                      🗑️
+                      <span className="btn-icon-text">Delete</span>
                     </button>
                   </div>
                 </div>
@@ -250,15 +285,25 @@ export function BalanceTracker({ accounts, onAdd, onUpdate, onDelete }: BalanceT
                       })}
                     </span>
                   </div>
-                  <div className="balance-row highlight">
-                    <span className="balance-label">Current Balance:</span>
-                    <span className={`balance-value ${balanceForMonth <= 0 ? 'paid-off' : ''}`}>
-                      {formatCurrency(balanceForMonth)}
+                  <div className="balance-row">
+                    <span className="balance-label">Total Paid:</span>
+                    <span className="balance-value paid">{formatCurrency(totalPaid)}</span>
+                  </div>
+                  <div className="balance-row">
+                    <span className="balance-label">Projected Balance:</span>
+                    <span className={`balance-value ${projectedBalance <= 0 ? 'paid-off' : ''}`}>
+                      {formatCurrency(projectedBalance)}
                     </span>
                   </div>
-                  {balanceForMonth > 0 && monthsRemaining !== Infinity && (
+                  <div className="balance-row highlight">
+                    <span className="balance-label">Actual Balance:</span>
+                    <span className={`balance-value ${actualBalance <= 0 ? 'paid-off' : ''}`}>
+                      {formatCurrency(actualBalance)}
+                    </span>
+                  </div>
+                  {actualBalance > 0 && monthsRemaining !== Infinity && (
                     <div className="balance-row">
-                      <span className="balance-label">Months Remaining:</span>
+                      <span className="balance-label">Est. Months Remaining:</span>
                       <span className="balance-value">{monthsRemaining}</span>
                     </div>
                   )}
@@ -275,6 +320,33 @@ export function BalanceTracker({ accounts, onAdd, onUpdate, onDelete }: BalanceT
                     {progressPercentage.toFixed(1)}% paid off
                   </span>
                 </div>
+
+                {/* Payment History */}
+                {Object.keys(paidByMonth).length > 0 && (
+                  <div className="payment-history">
+                    <h4>Payment History</h4>
+                    <div className="payment-list">
+                      {Object.entries(paidByMonth)
+                        .sort(([a], [b]) => b.localeCompare(a))
+                        .map(([month, monthExpenses]) => (
+                          <div key={month} className="payment-month">
+                            <span className="payment-month-label">
+                              {new Date(month + '-01').toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                year: 'numeric' 
+                              })}
+                            </span>
+                            {monthExpenses.map(exp => (
+                              <div key={exp.id} className="payment-item">
+                                <span className="payment-desc">{exp.description}</span>
+                                <span className="payment-amount">{formatCurrency(Number(exp.amount))}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -285,6 +357,43 @@ export function BalanceTracker({ accounts, onAdd, onUpdate, onDelete }: BalanceT
       {accounts.length > 0 && (
         <div className="balance-projection">
           <h3>Monthly Balance Projection</h3>
+          <p className="projection-subtitle">Based on actual payments vs scheduled deductions</p>
+          
+          {/* Mobile Cards View */}
+          <div className="projection-cards-mobile">
+            {monthOptions.slice(0, 6).map((month) => (
+              <div 
+                key={month.value} 
+                className={`projection-card ${month.value === getCurrentBalanceMonth() ? 'current' : ''}`}
+              >
+                <div className="projection-card-header">{month.label}</div>
+                <div className="projection-card-accounts">
+                  {accounts.map((account) => {
+                    const actualBalance = getActualBalanceForMonth(account, month.value);
+                    const projectedBalance = getBalanceForMonth(account, month.value);
+                    const diff = projectedBalance - actualBalance;
+                    return (
+                      <div key={account.id} className="projection-card-row">
+                        <span className="projection-account-name">{account.name}</span>
+                        <div className="projection-balances">
+                          <span className={`projection-actual ${actualBalance <= 0 ? 'paid-off' : ''}`}>
+                            {formatCurrency(actualBalance)}
+                          </span>
+                          {diff !== 0 && (
+                            <span className={`projection-diff ${diff > 0 ? 'behind' : 'ahead'}`}>
+                              {diff > 0 ? '↓' : '↑'} {formatCurrency(Math.abs(diff))}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
           <div className="projection-table-wrapper">
             <table className="projection-table">
               <thead>
@@ -300,10 +409,19 @@ export function BalanceTracker({ accounts, onAdd, onUpdate, onDelete }: BalanceT
                   <tr key={month.value} className={month.value === getCurrentBalanceMonth() ? 'current-month' : ''}>
                     <td>{month.label}</td>
                     {accounts.map((account) => {
-                      const balance = getBalanceForMonth(account, month.value);
+                      const actualBalance = getActualBalanceForMonth(account, month.value);
+                      const projectedBalance = getBalanceForMonth(account, month.value);
+                      const diff = projectedBalance - actualBalance;
                       return (
-                        <td key={account.id} className={balance <= 0 ? 'paid-off' : ''}>
-                          {formatCurrency(balance)}
+                        <td key={account.id} className={actualBalance <= 0 ? 'paid-off' : ''}>
+                          <div className="projection-cell">
+                            <span className="actual-balance">{formatCurrency(actualBalance)}</span>
+                            {diff !== 0 && (
+                              <span className={`projection-diff ${diff > 0 ? 'behind' : 'ahead'}`}>
+                                {diff > 0 ? '↓' : '↑'} {formatCurrency(Math.abs(diff))}
+                              </span>
+                            )}
+                          </div>
                         </td>
                       );
                     })}

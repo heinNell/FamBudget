@@ -77,7 +77,7 @@ export function TaxSection({ taxes, onAdd, onDelete, onUpdate }: TaxSectionProps
   return (
     <div className="section tax-section">
       <div className="section-header">
-        <h2>🏛️ Taxes</h2>
+        <h2>Taxes & Deductions</h2>
         <button className="btn-add" onClick={() => { resetForm(); setIsAdding(!isAdding); }}>
           {isAdding ? 'Cancel' : '+ Add Tax'}
         </button>
@@ -86,7 +86,7 @@ export function TaxSection({ taxes, onAdd, onDelete, onUpdate }: TaxSectionProps
       {isAdding && (
         <form className="add-form" onSubmit={handleSubmit}>
           <div className="form-header">
-            <span>{editingId ? '✏️ Edit Tax' : '➕ New Tax'}</span>
+            <span className="form-title">{editingId ? 'Edit Tax' : 'New Tax'}</span>
             {editingId && (
               <button type="button" className="btn-cancel" onClick={handleCancel}>
                 Cancel Edit
@@ -140,14 +140,14 @@ export function TaxSection({ taxes, onAdd, onDelete, onUpdate }: TaxSectionProps
                       onClick={() => handleEdit(tax)}
                       title="Edit"
                     >
-                      ✏️
+                      <span className="btn-icon-text">Edit</span>
                     </button>
                     <button
                       className="btn-delete"
                       onClick={() => handleDelete(tax.id)}
                       title="Delete"
                     >
-                      🗑️
+                      <span className="btn-icon-text">Delete</span>
                     </button>
                   </div>
                 </li>
@@ -174,14 +174,14 @@ export function TaxSection({ taxes, onAdd, onDelete, onUpdate }: TaxSectionProps
                       onClick={() => handleEdit(tax)}
                       title="Edit"
                     >
-                      ✏️
+                      <span className="btn-icon-text">Edit</span>
                     </button>
                     <button
                       className="btn-delete"
                       onClick={() => handleDelete(tax.id)}
                       title="Delete"
                     >
-                      🗑️
+                      <span className="btn-icon-text">Delete</span>
                     </button>
                   </div>
                 </li>

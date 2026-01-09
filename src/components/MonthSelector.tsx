@@ -5,16 +5,20 @@ interface MonthSelectorProps {
   onMonthChange: (month: string) => void;
 }
 
-/** Generate list of months (current month and 11 previous months) */
+/** Generate list of months from October 2025 through December 2026 */
 function getMonthOptions(): { value: string; label: string }[] {
   const options: { value: string; label: string }[] = [];
-  const now = new Date();
-
-  for (let i = 0; i < 12; i++) {
-    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  
+  // Start from October 2025 and go through December 2026
+  const startDate = new Date(2025, 9, 1); // October 2025
+  const endDate = new Date(2026, 11, 1); // December 2026
+  
+  const current = new Date(startDate);
+  while (current <= endDate) {
+    const value = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
+    const label = current.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     options.push({ value, label });
+    current.setMonth(current.getMonth() + 1);
   }
 
   return options;

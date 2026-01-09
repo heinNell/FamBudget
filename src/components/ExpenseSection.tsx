@@ -33,19 +33,19 @@ const EXPENSE_CATEGORIES: ExpenseCategory[] = [
   'Other',
 ];
 
-const CATEGORY_ICONS: Record<ExpenseCategory, string> = {
-  Housing: '🏠',
-  Utilities: '💡',
-  Groceries: '🛒',
-  Transportation: '🚗',
-  Healthcare: '🏥',
-  Entertainment: '🎬',
-  Dining: '🍽️',
-  Shopping: '🛍️',
-  Education: '📚',
-  Insurance: '🛡️',
-  Savings: '💰',
-  Other: '📦',
+const CATEGORY_LABELS: Record<ExpenseCategory, { abbr: string; color: string }> = {
+  Housing: { abbr: 'HSG', color: '#6366f1' },
+  Utilities: { abbr: 'UTL', color: '#8b5cf6' },
+  Groceries: { abbr: 'GRC', color: '#22c55e' },
+  Transportation: { abbr: 'TRN', color: '#f59e0b' },
+  Healthcare: { abbr: 'HLT', color: '#ef4444' },
+  Entertainment: { abbr: 'ENT', color: '#ec4899' },
+  Dining: { abbr: 'DIN', color: '#f97316' },
+  Shopping: { abbr: 'SHP', color: '#14b8a6' },
+  Education: { abbr: 'EDU', color: '#3b82f6' },
+  Insurance: { abbr: 'INS', color: '#64748b' },
+  Savings: { abbr: 'SAV', color: '#10b981' },
+  Other: { abbr: 'OTH', color: '#94a3b8' },
 };
 
 export function ExpenseSection({
@@ -63,6 +63,9 @@ export function ExpenseSection({
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [isShared, setIsShared] = useState(false);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [isPaid, setIsPaid] = useState(false);
+  const [note, setNote] = useState('');
   const [balanceAccountId, setBalanceAccountId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -70,6 +73,9 @@ export function ExpenseSection({
     setDescription('');
     setAmount('');
     setIsShared(false);
+    setIsRecurring(false);
+    setIsPaid(false);
+    setNote('');
     setMember('Nikkie');
     setCategory('Groceries');
     setBalanceAccountId(null);
@@ -88,6 +94,9 @@ export function ExpenseSection({
       description: description.trim(),
       amount: parseFloat(amount),
       is_shared: isShared,
+      is_recurring: isRecurring,
+      is_paid: isPaid,
+      note: note.trim() || null,
       balance_account_id: balanceAccountId,
     };
 
@@ -108,6 +117,9 @@ export function ExpenseSection({
     setDescription(expense.description);
     setAmount(String(expense.amount));
     setIsShared(expense.is_shared);
+    setIsRecurring(expense.is_recurring);
+    setIsPaid(expense.is_paid);
+    setNote(expense.note || '');
     setBalanceAccountId(expense.balance_account_id);
     setIsAdding(true);
   };
@@ -129,13 +141,48 @@ export function ExpenseSection({
     }
   };
 
+  // Quick toggle for paid status
+  const handleTogglePaid = async (expense: Expense) => {
+    const data: ExpenseFormData = {
+      member: expense.member,
+      category: expense.category,
+      description: expense.description,
+      amount: Number(expense.amount),
+      is_shared: expense.is_shared,
+      is_recurring: expense.is_recurring,
+      is_paid: !expense.is_paid,
+      note: expense.note,
+      balance_account_id: expense.balance_account_id,
+    };
+    await onUpdate(expense.id, data);
+  };
+
+  // Inline note update - update when user finishes editing
+  const handleNoteUpdate = async (expense: Expense, newNote: string) => {
+    // Only update if note actually changed
+    if (expense.note === newNote || (!expense.note && !newNote)) return;
+    
+    const data: ExpenseFormData = {
+      member: expense.member,
+      category: expense.category,
+      description: expense.description,
+      amount: Number(expense.amount),
+      is_shared: expense.is_shared,
+      is_recurring: expense.is_recurring,
+      is_paid: expense.is_paid,
+      note: newNote.trim() || null,
+      balance_account_id: expense.balance_account_id,
+    };
+    await onUpdate(expense.id, data);
+  };
+
   const nikkieExpenses = expenses.filter((e) => e.member === 'Nikkie');
   const heinExpenses = expenses.filter((e) => e.member === 'Hein');
 
   return (
     <div className="section expense-section">
       <div className="section-header">
-        <h2>💸 Expenses</h2>
+        <h2>Expenses</h2>
         <button className="btn-add" onClick={() => { resetForm(); setIsAdding(!isAdding); }}>
           {isAdding ? 'Cancel' : '+ Add Expense'}
         </button>
@@ -144,7 +191,7 @@ export function ExpenseSection({
       {isAdding && (
         <form className="add-form" onSubmit={handleSubmit}>
           <div className="form-header">
-            <span>{editingId ? '✏️ Edit Expense' : '➕ New Expense'}</span>
+            <span className="form-title">{editingId ? 'Edit Expense' : 'New Expense'}</span>
             {editingId && (
               <button type="button" className="btn-cancel" onClick={handleCancel}>
                 Cancel Edit
@@ -162,7 +209,7 @@ export function ExpenseSection({
             >
               {EXPENSE_CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>
-                  {CATEGORY_ICONS[cat]} {cat}
+                  {cat}
                 </option>
               ))}
             </select>
@@ -190,6 +237,31 @@ export function ExpenseSection({
               />
               Shared
             </label>
+            <label className="shared-checkbox">
+              <input
+                type="checkbox"
+                checked={isRecurring}
+                onChange={(e) => setIsRecurring(e.target.checked)}
+              />
+              Recurring
+            </label>
+            <label className="shared-checkbox paid-checkbox">
+              <input
+                type="checkbox"
+                checked={isPaid}
+                onChange={(e) => setIsPaid(e.target.checked)}
+              />
+              Paid
+            </label>
+          </div>
+          <div className="form-row">
+            <input
+              type="text"
+              placeholder="Monthly note (optional)"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="note-input"
+            />
           </div>
           {balanceAccounts.length > 0 && (
             <div className="form-row">
@@ -220,14 +292,17 @@ export function ExpenseSection({
       {/* Category Breakdown */}
       {Object.keys(expensesByCategory).length > 0 && (
         <div className="category-breakdown">
-          <h4>📊 Expenses by Category</h4>
+          <h4>Expenses by Category</h4>
           <div className="category-grid">
             {Object.entries(expensesByCategory)
               .sort(([, a], [, b]) => b - a)
               .map(([cat, amt]) => (
                 <div key={cat} className="category-item">
                   <span className="category-name">
-                    {CATEGORY_ICONS[cat as ExpenseCategory]} {cat}
+                    <span className="category-label" style={{ background: CATEGORY_LABELS[cat as ExpenseCategory].color }}>
+                      {CATEGORY_LABELS[cat as ExpenseCategory].abbr}
+                    </span>
+                    {cat}
                   </span>
                   <span className="category-amount">{formatCurrency(amt)}</span>
                 </div>
@@ -244,17 +319,27 @@ export function ExpenseSection({
           ) : (
             <ul className="entries-list">
               {nikkieExpenses.map((expense) => (
-                <li key={expense.id} className="entry-item">
+                <li key={expense.id} className={`entry-item ${expense.is_paid ? 'paid' : ''}`}>
+                  <div className="entry-paid-toggle">
+                    <input
+                      type="checkbox"
+                      checked={expense.is_paid}
+                      onChange={() => handleTogglePaid(expense)}
+                      title={expense.is_paid ? 'Mark as unpaid' : 'Mark as paid'}
+                    />
+                  </div>
                   <div className="entry-info">
-                    <span className="entry-category">
-                      {CATEGORY_ICONS[expense.category as ExpenseCategory]}
+                    <span className="entry-category" style={{ background: CATEGORY_LABELS[expense.category as ExpenseCategory].color }}>
+                      {CATEGORY_LABELS[expense.category as ExpenseCategory].abbr}
                     </span>
                     <span className="entry-description">
                       {expense.description}
                       {expense.is_shared && <span className="shared-badge">Shared</span>}
+                      {expense.is_recurring && <span className="recurring-badge">Recurring</span>}
+                      {expense.is_paid && <span className="paid-badge">Paid</span>}
                       {expense.balance_account_id && (
                         <span className="balance-link-badge">
-                          🔗 {getBalanceAccountName(expense.balance_account_id)}
+                          {getBalanceAccountName(expense.balance_account_id)}
                         </span>
                       )}
                     </span>
@@ -268,15 +353,29 @@ export function ExpenseSection({
                       onClick={() => handleEdit(expense)}
                       title="Edit"
                     >
-                      ✏️
+                      <span className="btn-icon-text">Edit</span>
                     </button>
                     <button
                       className="btn-delete"
                       onClick={() => handleDelete(expense.id)}
                       title="Delete"
                     >
-                      🗑️
+                      <span className="btn-icon-text">Delete</span>
                     </button>
+                  </div>
+                  <div className="entry-note-inline">
+                    <input
+                      type="text"
+                      className="inline-note-input"
+                      placeholder="Add a note..."
+                      defaultValue={expense.note || ''}
+                      onBlur={(e) => handleNoteUpdate(expense, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.currentTarget.blur();
+                        }
+                      }}
+                    />
                   </div>
                 </li>
               ))}
@@ -291,17 +390,27 @@ export function ExpenseSection({
           ) : (
             <ul className="entries-list">
               {heinExpenses.map((expense) => (
-                <li key={expense.id} className="entry-item">
+                <li key={expense.id} className={`entry-item ${expense.is_paid ? 'paid' : ''}`}>
+                  <div className="entry-paid-toggle">
+                    <input
+                      type="checkbox"
+                      checked={expense.is_paid}
+                      onChange={() => handleTogglePaid(expense)}
+                      title={expense.is_paid ? 'Mark as unpaid' : 'Mark as paid'}
+                    />
+                  </div>
                   <div className="entry-info">
-                    <span className="entry-category">
-                      {CATEGORY_ICONS[expense.category as ExpenseCategory]}
+                    <span className="entry-category" style={{ background: CATEGORY_LABELS[expense.category as ExpenseCategory].color }}>
+                      {CATEGORY_LABELS[expense.category as ExpenseCategory].abbr}
                     </span>
                     <span className="entry-description">
                       {expense.description}
                       {expense.is_shared && <span className="shared-badge">Shared</span>}
+                      {expense.is_recurring && <span className="recurring-badge">Recurring</span>}
+                      {expense.is_paid && <span className="paid-badge">Paid</span>}
                       {expense.balance_account_id && (
                         <span className="balance-link-badge">
-                          🔗 {getBalanceAccountName(expense.balance_account_id)}
+                          {getBalanceAccountName(expense.balance_account_id)}
                         </span>
                       )}
                     </span>
@@ -315,15 +424,29 @@ export function ExpenseSection({
                       onClick={() => handleEdit(expense)}
                       title="Edit"
                     >
-                      ✏️
+                      <span className="btn-icon-text">Edit</span>
                     </button>
                     <button
                       className="btn-delete"
                       onClick={() => handleDelete(expense.id)}
                       title="Delete"
                     >
-                      🗑️
+                      <span className="btn-icon-text">Delete</span>
                     </button>
+                  </div>
+                  <div className="entry-note-inline">
+                    <input
+                      type="text"
+                      className="inline-note-input"
+                      placeholder="Add a note..."
+                      defaultValue={expense.note || ''}
+                      onBlur={(e) => handleNoteUpdate(expense, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.currentTarget.blur();
+                        }
+                      }}
+                    />
                   </div>
                 </li>
               ))}

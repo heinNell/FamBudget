@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase, TABLES } from '../lib/supabase';
-import type { BalanceAccount, BalanceAccountFormData, BalanceHistory } from '../types/budget';
+import type { BalanceAccount, BalanceAccountFormData, BalanceHistory, Expense } from '../types/budget';
 
 /** Generate list of months from December 2025 through December 2026 */
 export function getBalanceMonthOptions(): { value: string; label: string }[] {
@@ -59,6 +59,7 @@ export function getCurrentBalanceMonth(): string {
 interface UseBalancesReturn {
   accounts: BalanceAccount[];
   history: BalanceHistory[];
+  paidExpenses: Expense[]; // All paid expenses linked to balance accounts
   loading: boolean;
   error: string | null;
   addAccount: (data: BalanceAccountFormData) => Promise<void>;
@@ -70,6 +71,7 @@ interface UseBalancesReturn {
 export function useBalances(): UseBalancesReturn {
   const [accounts, setAccounts] = useState<BalanceAccount[]>([]);
   const [history, setHistory] = useState<BalanceHistory[]>([]);
+  const [paidExpenses, setPaidExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,6 +96,19 @@ export function useBalances(): UseBalancesReturn {
 
       if (historyError) throw historyError;
 
+      // Fetch all paid expenses that are linked to balance accounts
+      const { data: paidExpensesData, error: paidError } = await supabase
+        .from(TABLES.EXPENSES)
+        .select('*')
+        .not('balance_account_id', 'is', null)
+        .eq('is_paid', true)
+        .order('month', { ascending: false });
+
+      // Don't throw error if is_paid column doesn't exist yet
+      if (paidError && !paidError.message.includes('does not exist')) {
+        console.warn('Error fetching paid expenses:', paidError);
+      }
+
       // Calculate current balances for each account
       const currentMonth = getCurrentBalanceMonth();
       const accountsWithCurrentBalance = (accountsData || []).map((account: BalanceAccount) => ({
@@ -108,6 +123,7 @@ export function useBalances(): UseBalancesReturn {
 
       setAccounts(accountsWithCurrentBalance);
       setHistory(historyData || []);
+      setPaidExpenses(paidExpensesData || []);
     } catch (err) {
       console.error('Error fetching balance data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load balance data');
@@ -168,6 +184,7 @@ export function useBalances(): UseBalancesReturn {
   return {
     accounts,
     history,
+    paidExpenses,
     loading,
     error,
     addAccount,

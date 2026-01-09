@@ -81,7 +81,7 @@ export function IncomeSection({ incomes, onAdd, onDelete, onUpdate }: IncomeSect
   return (
     <div className="section income-section">
       <div className="section-header">
-        <h2>💰 Income</h2>
+        <h2>Income</h2>
         <button className="btn-add" onClick={() => { resetForm(); setIsAdding(!isAdding); }}>
           {isAdding ? 'Cancel' : '+ Add Income'}
         </button>
@@ -90,7 +90,7 @@ export function IncomeSection({ incomes, onAdd, onDelete, onUpdate }: IncomeSect
       {isAdding && (
         <form className="add-form" onSubmit={handleSubmit}>
           <div className="form-header">
-            <span>{editingId ? '✏️ Edit Income' : '➕ New Income'}</span>
+            <span className="form-title">{editingId ? 'Edit Income' : 'New Income'}</span>
             {editingId && (
               <button type="button" className="btn-cancel" onClick={handleCancel}>
                 Cancel Edit
@@ -103,8 +103,8 @@ export function IncomeSection({ incomes, onAdd, onDelete, onUpdate }: IncomeSect
               <option value="Hein">Hein</option>
             </select>
             <select value={incomeType} onChange={(e) => setIncomeType(e.target.value as IncomeType)}>
-              <option value="Salary">💼 Salary (Gross)</option>
-              <option value="Other">📦 Other Income</option>
+              <option value="Salary">Salary (Gross)</option>
+              <option value="Other">Other Income</option>
             </select>
             <input
               type="text"
@@ -139,7 +139,9 @@ export function IncomeSection({ incomes, onAdd, onDelete, onUpdate }: IncomeSect
               {nikkieIncomes.map((income) => (
                 <li key={income.id} className="entry-item">
                   <div className="entry-info">
-                    <span className="entry-category">{income.income_type === 'Salary' ? '💼' : '📦'}</span>
+                    <span className={`entry-category income-type-icon ${income.income_type.toLowerCase()}`}>
+                      {income.income_type === 'Salary' ? 'SAL' : 'OTH'}
+                    </span>
                     <span className="entry-description">
                       {income.description}
                       <span className="income-type-badge">{income.income_type}</span>
@@ -152,14 +154,14 @@ export function IncomeSection({ incomes, onAdd, onDelete, onUpdate }: IncomeSect
                       onClick={() => handleEdit(income)}
                       title="Edit"
                     >
-                      ✏️
+                      <span className="btn-icon-text">Edit</span>
                     </button>
                     <button
                       className="btn-delete"
                       onClick={() => handleDelete(income.id)}
                       title="Delete"
                     >
-                      🗑️
+                      <span className="btn-icon-text">Delete</span>
                     </button>
                   </div>
                 </li>
@@ -177,7 +179,9 @@ export function IncomeSection({ incomes, onAdd, onDelete, onUpdate }: IncomeSect
               {heinIncomes.map((income) => (
                 <li key={income.id} className="entry-item">
                   <div className="entry-info">
-                    <span className="entry-category">{income.income_type === 'Salary' ? '💼' : '📦'}</span>
+                    <span className={`entry-category income-type-icon ${income.income_type.toLowerCase()}`}>
+                      {income.income_type === 'Salary' ? 'SAL' : 'OTH'}
+                    </span>
                     <span className="entry-description">
                       {income.description}
                       <span className="income-type-badge">{income.income_type}</span>
@@ -190,14 +194,14 @@ export function IncomeSection({ incomes, onAdd, onDelete, onUpdate }: IncomeSect
                       onClick={() => handleEdit(income)}
                       title="Edit"
                     >
-                      ✏️
+                      <span className="btn-icon-text">Edit</span>
                     </button>
                     <button
                       className="btn-delete"
                       onClick={() => handleDelete(income.id)}
                       title="Delete"
                     >
-                      🗑️
+                      <span className="btn-icon-text">Delete</span>
                     </button>
                   </div>
                 </li>

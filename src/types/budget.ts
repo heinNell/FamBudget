@@ -49,8 +49,30 @@ export interface Expense {
   amount: number;
   month: string; // Format: YYYY-MM
   is_shared: boolean;
+  is_recurring: boolean; // Flag for recurring expenses that should carry over
+  is_paid: boolean; // Flag to mark expense as paid
+  note: string | null; // Monthly note for the expense
   balance_account_id: string | null; // Link to balance account for loan/debt payments
   created_at: string;
+}
+
+/** Unnecessary expense entry - discretionary spending */
+export interface UnnecessaryExpense {
+  id: string;
+  member: FamilyMember;
+  description: string;
+  amount: number;
+  month: string; // Format: YYYY-MM
+  note: string | null; // Monthly note for the expense
+  created_at: string;
+}
+
+/** Form data for creating/editing unnecessary expense */
+export interface UnnecessaryExpenseFormData {
+  member: FamilyMember;
+  description: string;
+  amount: number;
+  note?: string | null; // Optional monthly note
 }
 
 /** Monthly summary for a family member */
@@ -62,6 +84,7 @@ export interface MemberSummary {
   totalTaxes: number;
   netIncome: number;
   totalExpenses: number;
+  totalUnnecessaryExpenses: number;
   remainingBalance: number;
 }
 
@@ -73,6 +96,7 @@ export interface HouseholdSummary {
   totalTaxes: number;
   netIncome: number;
   totalExpenses: number;
+  totalUnnecessaryExpenses: number;
   remainingBalance: number;
   nikkieSummary: MemberSummary;
   heinSummary: MemberSummary;
@@ -99,7 +123,10 @@ export interface ExpenseFormData {
   category: ExpenseCategory;
   description: string;
   amount: number;
+  is_recurring: boolean; // Flag for recurring expenses
   is_shared: boolean;
+  is_paid: boolean; // Flag to mark expense as paid
+  note: string | null; // Monthly note for the expense
   balance_account_id?: string | null; // Optional link to balance account
 }
 
@@ -133,4 +160,71 @@ export interface BalanceHistory {
   deduction: number;
   closing_balance: number;
   created_at: string;
+}
+
+/** Budget entry for tracking budget amounts and expenses */
+export interface BudgetEntry {
+  id: string;
+  name: string;
+  description: string;
+  budget_amount: number;
+  month: string; // Format: YYYY-MM
+  member: FamilyMember;
+  category: ExpenseCategory;
+  created_at: string;
+}
+
+/** Budget expense entry for tracking spending against a budget */
+export interface BudgetExpense {
+  id: string;
+  budget_id: string;
+  description: string;
+  amount: number;
+  date: string; // Format: YYYY-MM-DD
+  created_at: string;
+}
+
+/** Form data for creating/editing budget entry */
+export interface BudgetEntryFormData {
+  name: string;
+  description: string;
+  budget_amount: number;
+  member: FamilyMember;
+  category: ExpenseCategory;
+}
+
+/** Form data for creating/editing budget expense */
+export interface BudgetExpenseFormData {
+  description: string;
+  amount: number;
+  date: string;
+}
+
+/** Budget summary with expenses */
+export interface BudgetWithExpenses {
+  budget: BudgetEntry;
+  expenses: BudgetExpense[];
+  totalSpent: number;
+  remainingBalance: number;
+  percentageUsed: number;
+}
+
+/** Financial statement document */
+export interface FinancialStatement {
+  id: string;
+  month: string; // Format: YYYY-MM
+  filename: string;
+  file_path: string;
+  file_size: number;
+  content_type: string;
+  uploaded_by: FamilyMember | null;
+  notes: string;
+  created_at: string;
+}
+
+/** Form data for uploading financial statement */
+export interface FinancialStatementFormData {
+  file: File;
+  uploaded_by: FamilyMember;
+  notes?: string;
 }

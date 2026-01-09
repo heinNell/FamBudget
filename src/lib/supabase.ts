@@ -16,6 +16,7 @@ export const TABLES = {
   INCOMES: 'incomes',
   TAXES: 'taxes',
   EXPENSES: 'expenses',
+  UNNECESSARY_EXPENSES: 'unnecessary_expenses',
   BALANCE_ACCOUNTS: 'balance_accounts',
   BALANCE_HISTORY: 'balance_history',
 } as const;

@@ -19,7 +19,7 @@ export function SummaryCard({ summary }: SummaryCardProps) {
     <div className="summary-container">
       {/* Household Summary */}
       <div className="summary-card household">
-        <h2>🏠 Household Summary</h2>
+        <h2>Household Summary</h2>
         <div className="summary-grid">
           <div className="summary-item">
             <span className="label">Gross Income (Salary)</span>
@@ -40,6 +40,10 @@ export function SummaryCard({ summary }: SummaryCardProps) {
           <div className="summary-item">
             <span className="label">Total Expenses</span>
             <span className="value expenses">{formatCurrency(summary.totalExpenses)}</span>
+          </div>
+          <div className="summary-item">
+            <span className="label">Unnecessary Expenses</span>
+            <span className="value expenses">{formatCurrency(summary.totalUnnecessaryExpenses)}</span>
           </div>
           <div className="summary-item highlight">
             <span className="label">Remaining Balance</span>
@@ -76,6 +80,10 @@ export function SummaryCard({ summary }: SummaryCardProps) {
               <span>Expenses:</span>
               <span className="expenses">{formatCurrency(nikkieSummary.totalExpenses)}</span>
             </div>
+            <div className="detail-row">
+              <span>Unnecessary:</span>
+              <span className="expenses">{formatCurrency(nikkieSummary.totalUnnecessaryExpenses)}</span>
+            </div>
             <div className="detail-row highlight">
               <span>Balance:</span>
               <span className={nikkieSummary.remainingBalance >= 0 ? 'positive' : 'negative'}>
@@ -108,6 +116,10 @@ export function SummaryCard({ summary }: SummaryCardProps) {
             <div className="detail-row">
               <span>Expenses:</span>
               <span className="expenses">{formatCurrency(heinSummary.totalExpenses)}</span>
+            </div>
+            <div className="detail-row">
+              <span>Unnecessary:</span>
+              <span className="expenses">{formatCurrency(heinSummary.totalUnnecessaryExpenses)}</span>
             </div>
             <div className="detail-row highlight">
               <span>Balance:</span>
