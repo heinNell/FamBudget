@@ -2227,6 +2227,7 @@ body {
 
   .balance-account-card {
     padding: var(--spacing-md);
+    overflow: hidden;
   }
 
   .balance-account-header {
@@ -2238,6 +2239,8 @@ body {
   .balance-account-header h3 {
     font-size: 1.125rem;
     text-align: center;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   .balance-account-actions {
@@ -2250,10 +2253,13 @@ body {
     flex: 1;
     justify-content: center;
     min-height: 44px;
+    max-width: 50%;
   }
 
   .balance-account-description {
     text-align: center;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   /* Balance details - more compact on mobile */
@@ -2267,16 +2273,20 @@ body {
     gap: var(--spacing-xs);
     padding: var(--spacing-sm);
     text-align: center;
+    overflow: hidden;
   }
 
   .balance-label {
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    line-height: 1.4;
   }
 
   .balance-value {
     font-size: 1.125rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   .balance-row.highlight {
@@ -2420,6 +2430,7 @@ body {
     align-items: center;
     padding: var(--spacing-sm);
     border-bottom: 1px solid var(--color-border-light);
+    gap: var(--spacing-sm);
   }
 
   .projection-card-row:last-child {
@@ -2431,6 +2442,10 @@ body {
     font-weight: 600;
     color: var(--color-text);
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .projection-balances {
@@ -2438,6 +2453,7 @@ body {
     flex-direction: column;
     align-items: flex-end;
     gap: 2px;
+    flex-shrink: 0;
   }
 
   .projection-actual {
@@ -2513,35 +2529,125 @@ body {
 
   .balance-account-card {
     padding: var(--spacing-sm);
+    overflow: hidden;
   }
 
   .balance-account-header h3 {
-    font-size: 1rem;
+    font-size: 0.9375rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+
+  .balance-account-description {
+    font-size: 0.75rem;
+    word-wrap: break-word;
   }
 
   .balance-row {
     padding: var(--spacing-xs);
   }
 
+  .balance-label {
+    font-size: 0.6875rem;
+    line-height: 1.3;
+  }
+
   .balance-value {
-    font-size: 1rem;
+    font-size: 0.9375rem;
+    word-wrap: break-word;
   }
 
-  .projection-card-header {
+  .balance-row.highlight {
+    margin: var(--spacing-sm) calc(-1 * var(--spacing-sm)) calc(-1 * var(--spacing-sm));
+    padding: var(--spacing-sm);
+  }
+
+  .balance-row.highlight .balance-label,
+  .balance-row.highlight .balance-value {
     font-size: 0.8125rem;
-    padding: var(--spacing-xs) var(--spacing-sm);
   }
 
-  .projection-account-name {
+  .progress-text {
     font-size: 0.75rem;
   }
 
-  .projection-actual {
+  /* Payment history on extra small */
+  .payment-history {
+    padding: var(--spacing-sm);
+  }
+
+  .payment-history h4 {
+    font-size: 0.8125rem;
+  }
+
+  .payment-desc {
+    font-size: 0.75rem;
+    word-wrap: break-word;
+  }
+
+  .payment-amount {
     font-size: 0.875rem;
   }
 
+  /* Projection cards on extra small */
+  .projection-card-header {
+    font-size: 0.75rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .projection-card-row {
+    padding: var(--spacing-xs);
+    gap: var(--spacing-xs);
+  }
+
+  .projection-account-name {
+    font-size: 0.6875rem;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 1;
+    max-width: 45%;
+  }
+
+  .projection-balances {
+    flex-shrink: 0;
+  }
+
+  .projection-actual {
+    font-size: 0.8125rem;
+  }
+
   .projection-diff {
-    font-size: 0.625rem;
+    font-size: 0.5625rem;
+    padding: 1px 4px;
+  }
+
+  /* Balance view selector extra small */
+  .balance-view-selector {
+    padding: var(--spacing-xs);
+  }
+
+  .balance-view-selector label {
+    font-size: 0.75rem;
+  }
+
+  .balance-view-selector select {
+    font-size: 0.875rem;
+    min-height: 44px;
+  }
+
+  /* Form on extra small */
+  .balance-tracker .form-group label {
+    font-size: 0.6875rem;
+  }
+
+  .balance-tracker .form-group input,
+  .balance-tracker .form-group select {
+    font-size: 16px;
+    padding: var(--spacing-sm);
+    min-height: 44px;
   }
 }
 
