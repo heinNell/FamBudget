@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase, TABLES } from '../lib/supabase';
 import type {
-  Expense,
-  ExpenseFormData,
-  FamilyMember,
-  HouseholdSummary,
-  Income,
-  IncomeFormData,
-  MemberSummary,
-  Tax,
-  TaxFormData,
-  UnnecessaryExpense,
-  UnnecessaryExpenseFormData,
+    Expense,
+    ExpenseFormData,
+    FamilyMember,
+    HouseholdSummary,
+    Income,
+    IncomeFormData,
+    MemberSummary,
+    Tax,
+    TaxFormData,
+    UnnecessaryExpense,
+    UnnecessaryExpenseFormData,
 } from '../types/budget';
 
 /** Get previous month in YYYY-MM format */
@@ -253,6 +253,12 @@ export function useBudget(selectedMonth: string) {
         category: expense.category,
         description: expense.description,
         amount: expense.amount,
+        is_shared: expense.is_shared,
+        is_recurring: expense.is_recurring,
+        is_paid: expense.is_paid,
+        include_vat: expense.include_vat,
+        note: expense.note,
+        balance_account_id: expense.balance_account_id,
         month: selectedMonth,
       }));
 

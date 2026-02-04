@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { BalanceAccount, Expense, ExpenseCategory, ExpenseFormData, FamilyMember } from '../types/budget';
+import { VAT_RATE } from '../types/budget';
 
 interface ExpenseSectionProps {
   expenses: Expense[];
@@ -65,9 +66,20 @@ export function ExpenseSection({
   const [isShared, setIsShared] = useState(false);
   const [isRecurring, setIsRecurring] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
+  const [includeVat, setIncludeVat] = useState(false);
   const [note, setNote] = useState('');
   const [balanceAccountId, setBalanceAccountId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  /** Calculate VAT amount from base price */
+  const calculateVatAmount = (baseAmount: number): number => {
+    return baseAmount * VAT_RATE;
+  };
+
+  /** Calculate total amount with VAT */
+  const calculateTotalWithVat = (baseAmount: number): number => {
+    return baseAmount + calculateVatAmount(baseAmount);
+  };
 
   const resetForm = () => {
     setDescription('');
@@ -75,6 +87,7 @@ export function ExpenseSection({
     setIsShared(false);
     setIsRecurring(false);
     setIsPaid(false);
+    setIncludeVat(false);
     setNote('');
     setMember('Nikkie');
     setCategory('Groceries');
@@ -96,6 +109,7 @@ export function ExpenseSection({
       is_shared: isShared,
       is_recurring: isRecurring,
       is_paid: isPaid,
+      include_vat: includeVat,
       note: note.trim() || null,
       balance_account_id: balanceAccountId,
     };
@@ -119,6 +133,7 @@ export function ExpenseSection({
     setIsShared(expense.is_shared);
     setIsRecurring(expense.is_recurring);
     setIsPaid(expense.is_paid);
+    setIncludeVat(expense.include_vat);
     setNote(expense.note || '');
     setBalanceAccountId(expense.balance_account_id);
     setIsAdding(true);
@@ -151,6 +166,7 @@ export function ExpenseSection({
       is_shared: expense.is_shared,
       is_recurring: expense.is_recurring,
       is_paid: !expense.is_paid,
+      include_vat: expense.include_vat,
       note: expense.note,
       balance_account_id: expense.balance_account_id,
     };
@@ -170,6 +186,7 @@ export function ExpenseSection({
       is_shared: expense.is_shared,
       is_recurring: expense.is_recurring,
       is_paid: expense.is_paid,
+      include_vat: expense.include_vat,
       note: newNote.trim() || null,
       balance_account_id: expense.balance_account_id,
     };
@@ -253,7 +270,22 @@ export function ExpenseSection({
               />
               Paid
             </label>
+            <label className="shared-checkbox vat-checkbox">
+              <input
+                type="checkbox"
+                checked={includeVat}
+                onChange={(e) => setIncludeVat(e.target.checked)}
+              />
+              +VAT (15%)
+            </label>
           </div>
+          {includeVat && amount && (
+            <div className="form-row vat-preview">
+              <span className="vat-info">
+                Base: {formatCurrency(parseFloat(amount))} + VAT: {formatCurrency(calculateVatAmount(parseFloat(amount)))} = Total: {formatCurrency(calculateTotalWithVat(parseFloat(amount)))}
+              </span>
+            </div>
+          )}
           <div className="form-row">
             <input
               type="text"
@@ -337,6 +369,7 @@ export function ExpenseSection({
                       {expense.is_shared && <span className="shared-badge">Shared</span>}
                       {expense.is_recurring && <span className="recurring-badge">Recurring</span>}
                       {expense.is_paid && <span className="paid-badge">Paid</span>}
+                      {expense.include_vat && <span className="vat-badge">+VAT</span>}
                       {expense.balance_account_id && (
                         <span className="balance-link-badge">
                           {getBalanceAccountName(expense.balance_account_id)}
@@ -344,7 +377,14 @@ export function ExpenseSection({
                       )}
                     </span>
                     <span className="entry-amount expenses">
-                      {formatCurrency(Number(expense.amount))}
+                      {expense.include_vat ? (
+                        <span className="amount-with-vat">
+                          <span className="total-amount">{formatCurrency(calculateTotalWithVat(Number(expense.amount)))}</span>
+                          <span className="base-amount">({formatCurrency(Number(expense.amount))} + VAT)</span>
+                        </span>
+                      ) : (
+                        formatCurrency(Number(expense.amount))
+                      )}
                     </span>
                   </div>
                   <div className="entry-actions">
@@ -408,6 +448,7 @@ export function ExpenseSection({
                       {expense.is_shared && <span className="shared-badge">Shared</span>}
                       {expense.is_recurring && <span className="recurring-badge">Recurring</span>}
                       {expense.is_paid && <span className="paid-badge">Paid</span>}
+                      {expense.include_vat && <span className="vat-badge">+VAT</span>}
                       {expense.balance_account_id && (
                         <span className="balance-link-badge">
                           {getBalanceAccountName(expense.balance_account_id)}
@@ -415,7 +456,14 @@ export function ExpenseSection({
                       )}
                     </span>
                     <span className="entry-amount expenses">
-                      {formatCurrency(Number(expense.amount))}
+                      {expense.include_vat ? (
+                        <span className="amount-with-vat">
+                          <span className="total-amount">{formatCurrency(calculateTotalWithVat(Number(expense.amount)))}</span>
+                          <span className="base-amount">({formatCurrency(Number(expense.amount))} + VAT)</span>
+                        </span>
+                      ) : (
+                        formatCurrency(Number(expense.amount))
+                      )}
                     </span>
                   </div>
                   <div className="entry-actions">

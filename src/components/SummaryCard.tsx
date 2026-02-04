@@ -2,6 +2,7 @@ import type { HouseholdSummary } from '../types/budget';
 
 interface SummaryCardProps {
   summary: HouseholdSummary;
+  compact?: boolean;
 }
 
 /** Format currency for display in ZAR */
@@ -12,8 +13,52 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-export function SummaryCard({ summary }: SummaryCardProps) {
+export function SummaryCard({ summary, compact = false }: SummaryCardProps) {
   const { nikkieSummary, heinSummary } = summary;
+
+  // Compact view for sidebar
+  if (compact) {
+    return (
+      <div className="summary-compact">
+        <div className="compact-balance">
+          <span className="compact-label">Remaining Balance</span>
+          <span className={`compact-value ${summary.remainingBalance >= 0 ? 'positive' : 'negative'}`}>
+            {formatCurrency(summary.remainingBalance)}
+          </span>
+        </div>
+        
+        <div className="compact-breakdown">
+          <div className="compact-row">
+            <span>Net Income</span>
+            <span className="income">{formatCurrency(summary.netIncome)}</span>
+          </div>
+          <div className="compact-row">
+            <span>Expenses</span>
+            <span className="expenses">{formatCurrency(summary.totalExpenses)}</span>
+          </div>
+          <div className="compact-row">
+            <span>Discretionary</span>
+            <span className="expenses">{formatCurrency(summary.totalUnnecessaryExpenses)}</span>
+          </div>
+        </div>
+
+        <div className="compact-members">
+          <div className="compact-member nikkie">
+            <span className="member-name">Nikkie</span>
+            <span className={nikkieSummary.remainingBalance >= 0 ? 'positive' : 'negative'}>
+              {formatCurrency(nikkieSummary.remainingBalance)}
+            </span>
+          </div>
+          <div className="compact-member hein">
+            <span className="member-name">Hein</span>
+            <span className={heinSummary.remainingBalance >= 0 ? 'positive' : 'negative'}>
+              {formatCurrency(heinSummary.remainingBalance)}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="summary-container">

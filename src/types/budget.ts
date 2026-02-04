@@ -40,6 +40,9 @@ export type ExpenseCategory =
   | 'Savings'
   | 'Other';
 
+/** South African VAT rate (15%) */
+export const VAT_RATE = 0.15;
+
 /** Expense entry */
 export interface Expense {
   id: string;
@@ -51,6 +54,7 @@ export interface Expense {
   is_shared: boolean;
   is_recurring: boolean; // Flag for recurring expenses that should carry over
   is_paid: boolean; // Flag to mark expense as paid
+  include_vat: boolean; // Flag to indicate if VAT should be applied
   note: string | null; // Monthly note for the expense
   balance_account_id: string | null; // Link to balance account for loan/debt payments
   created_at: string;
@@ -126,6 +130,7 @@ export interface ExpenseFormData {
   is_recurring: boolean; // Flag for recurring expenses
   is_shared: boolean;
   is_paid: boolean; // Flag to mark expense as paid
+  include_vat: boolean; // Flag to indicate if VAT should be applied
   note: string | null; // Monthly note for the expense
   balance_account_id?: string | null; // Optional link to balance account
 }
