@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase, TABLES } from '../lib/supabase';
 import type {
-    Expense,
-    ExpenseFormData,
-    FamilyMember,
-    HouseholdSummary,
-    Income,
-    IncomeFormData,
-    MemberSummary,
-    Tax,
-    TaxFormData,
-    UnnecessaryExpense,
-    UnnecessaryExpenseFormData,
+  Expense,
+  ExpenseFormData,
+  FamilyMember,
+  HouseholdSummary,
+  Income,
+  IncomeFormData,
+  MemberSummary,
+  Tax,
+  TaxFormData,
+  UnnecessaryExpense,
+  UnnecessaryExpenseFormData,
 } from '../types/budget';
 
 /** Get previous month in YYYY-MM format */
@@ -123,11 +123,8 @@ export function useBudget(selectedMonth: string) {
   // Track which months have been auto-carried over to prevent duplicate carries
   const carriedOverMonths = useRef<Set<string>>(new Set());
 
-  /** Fetch all data for the selected month */
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
+  /** Fetch data without triggering auto carry-forward */
+  const fetchDataWithoutAutoCarry = useCallback(async () => {
     try {
       const [incomesResult, taxesResult, expensesResult, unnecessaryExpensesResult] = await Promise.all([
         supabase
@@ -155,47 +152,18 @@ export function useBudget(selectedMonth: string) {
       if (incomesResult.error) throw incomesResult.error;
       if (taxesResult.error) throw taxesResult.error;
       if (expensesResult.error) throw expensesResult.error;
-      // Don't throw for unnecessary expenses - table might not exist yet
-      if (unnecessaryExpensesResult.error && !unnecessaryExpensesResult.error.message.includes('does not exist')) {
-        throw unnecessaryExpensesResult.error;
-      }
 
-      const fetchedIncomes = incomesResult.data || [];
-      const fetchedTaxes = taxesResult.data || [];
-      const fetchedExpenses = expensesResult.data || [];
-      const fetchedUnnecessaryExpenses = unnecessaryExpensesResult.data || [];
-
-      setIncomes(fetchedIncomes);
-      setTaxes(fetchedTaxes);
-      setExpenses(fetchedExpenses);
-      setUnnecessaryExpenses(fetchedUnnecessaryExpenses);
-
-      // Auto carry-forward if current month has no data and we haven't already carried over
-      if (
-        fetchedIncomes.length === 0 &&
-        fetchedTaxes.length === 0 &&
-        fetchedExpenses.length === 0 &&
-        !carriedOverMonths.current.has(selectedMonth)
-      ) {
-        // Mark as carried over before starting to prevent race conditions
-        carriedOverMonths.current.add(selectedMonth);
-        await autoCarryForwardFromPreviousMonth();
-      }
+      setIncomes(incomesResult.data || []);
+      setTaxes(taxesResult.data || []);
+      setExpenses(expensesResult.data || []);
+      setUnnecessaryExpenses(unnecessaryExpensesResult.data || []);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to fetch data';
-      setError(message);
-      console.error('Error fetching budget data:', err);
-    } finally {
-      setLoading(false);
+      console.error('Error fetching data:', err);
     }
   }, [selectedMonth]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
   /** Auto carry forward all data from previous month */
-  const autoCarryForwardFromPreviousMonth = async (): Promise<boolean> => {
+  const autoCarryForwardFromPreviousMonth = useCallback(async (): Promise<boolean> => {
     setIsCarryingOver(true);
     try {
       const previousMonth = getPreviousMonth(selectedMonth);
@@ -287,10 +255,13 @@ export function useBudget(selectedMonth: string) {
     } finally {
       setIsCarryingOver(false);
     }
-  };
+  }, [selectedMonth, fetchDataWithoutAutoCarry]);
 
-  /** Fetch data without triggering auto carry-forward */
-  const fetchDataWithoutAutoCarry = async () => {
+  /** Fetch all data for the selected month */
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
     try {
       const [incomesResult, taxesResult, expensesResult, unnecessaryExpensesResult] = await Promise.all([
         supabase
@@ -318,15 +289,44 @@ export function useBudget(selectedMonth: string) {
       if (incomesResult.error) throw incomesResult.error;
       if (taxesResult.error) throw taxesResult.error;
       if (expensesResult.error) throw expensesResult.error;
+      // Don't throw for unnecessary expenses - table might not exist yet
+      if (unnecessaryExpensesResult.error && !unnecessaryExpensesResult.error.message.includes('does not exist')) {
+        throw unnecessaryExpensesResult.error;
+      }
 
-      setIncomes(incomesResult.data || []);
-      setTaxes(taxesResult.data || []);
-      setExpenses(expensesResult.data || []);
-      setUnnecessaryExpenses(unnecessaryExpensesResult.data || []);
+      const fetchedIncomes = incomesResult.data || [];
+      const fetchedTaxes = taxesResult.data || [];
+      const fetchedExpenses = expensesResult.data || [];
+      const fetchedUnnecessaryExpenses = unnecessaryExpensesResult.data || [];
+
+      setIncomes(fetchedIncomes);
+      setTaxes(fetchedTaxes);
+      setExpenses(fetchedExpenses);
+      setUnnecessaryExpenses(fetchedUnnecessaryExpenses);
+
+      // Auto carry-forward if current month has no data and we haven't already carried over
+      if (
+        fetchedIncomes.length === 0 &&
+        fetchedTaxes.length === 0 &&
+        fetchedExpenses.length === 0 &&
+        !carriedOverMonths.current.has(selectedMonth)
+      ) {
+        // Mark as carried over before starting to prevent race conditions
+        carriedOverMonths.current.add(selectedMonth);
+        await autoCarryForwardFromPreviousMonth();
+      }
     } catch (err) {
-      console.error('Error fetching data:', err);
+      const message = err instanceof Error ? err.message : 'Failed to fetch data';
+      setError(message);
+      console.error('Error fetching budget data:', err);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [selectedMonth, autoCarryForwardFromPreviousMonth]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   /** Add income */
   const addIncome = async (data: IncomeFormData): Promise<boolean> => {
